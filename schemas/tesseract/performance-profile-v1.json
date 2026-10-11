@@ -1,0 +1,126 @@
+{
+    "": "http://json-schema.org/draft-07/schema#",
+    "": "tesseract.performance-profile.v1",
+    "title": "Tesseract Performance Profile",
+    "description": "Versioned performance profile schema for Tesseract platform integration",
+    "type": "object",
+    "properties": {
+        "schema_version": {
+            "type": "string",
+            "const": "tesseract.performance-profile.v1",
+            "description": "Immutable schema version identifier"
+        },
+        "profile_id": {
+            "type": "string",
+            "description": "Unique profile identifier"
+        },
+        "model_id": {
+            "type": "string",
+            "description": "Hugging Face style model identifier"
+        },
+        "model_revision": {
+            "type": "string",
+            "description": "Immutable model revision hash or tag"
+        },
+        "hardware_id": {
+            "type": "string",
+            "description": "Hardware profile identifier"
+        },
+        "engine": {
+            "type": "string",
+            "description": "Inference engine name"
+        },
+        "engine_version": {
+            "type": "string",
+            "description": "Engine version used"
+        },
+        "candidate_id": {
+            "type": "string",
+            "description": "Deployment candidate identifier"
+        },
+        "evidence_type": {
+            "type": "string",
+            "enum": ["synthetic", "estimated", "measured", "validated"],
+            "description": "Provenance of this performance data"
+        },
+        "workload_id": {
+            "type": "string",
+            "description": "Workload profile identifier"
+        },
+        "gpu_count": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of GPUs in deployment"
+        },
+        "concurrency": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Request concurrency during benchmark"
+        },
+        "input_token_length_mean": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Mean input token length during benchmark"
+        },
+        "output_token_length_mean": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Mean output token length during benchmark"
+        },
+        "latency_ms": {
+            "type": "object",
+            "description": "Latency metrics in milliseconds",
+            "properties": {
+                "ttft_p50": {"type": "number", "description": "Time to first token p50"},
+                "ttft_p95": {"type": "number", "description": "Time to first token p95"},
+                "ttft_p99": {"type": "number", "description": "Time to first token p99"},
+                "itl_p50": {"type": "number", "description": "Inter-token latency p50"},
+                "itl_p95": {"type": "number", "description": "Inter-token latency p95"},
+                "itl_p99": {"type": "number", "description": "Inter-token latency p99"},
+                "request_latency_p50": {"type": "number", "description": "End-to-end request latency p50"},
+                "request_latency_p95": {"type": "number", "description": "End-to-end request latency p95"},
+                "request_latency_p99": {"type": "number", "description": "End-to-end request latency p99"}
+            }
+        },
+        "throughput": {
+            "type": "object",
+            "description": "Throughput metrics",
+            "properties": {
+                "completed_requests_per_second": {"type": "number"},
+                "input_tokens_per_second": {"type": "number"},
+                "output_tokens_per_second": {"type": "number"}
+            }
+        },
+        "error_rate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Fraction of requests that errored"
+        },
+        "sample_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of benchmark samples"
+        },
+        "source": {
+            "type": "object",
+            "description": "Source of this performance evidence",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["test_fixture", "benchmark", "profiler", "external"]
+                },
+                "artifact_id": {"type": "string"},
+                "collection_timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": ["type", "artifact_id"]
+        }
+    },
+    "required": [
+        "schema_version", "profile_id", "model_id", "model_revision",
+        "hardware_id", "engine", "evidence_type", "source"
+    ]
+}

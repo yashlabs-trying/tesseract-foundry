@@ -1,0 +1,20 @@
+workload_id: demo-chat
+request_rate_rps: 5.0
+concurrency: 8
+input_tokens:
+  mean: 512
+  p50: 384
+  p95: 2048
+  p99: 4096
+  max: 8192
+output_tokens:
+  mean: 256
+  p50: 128
+  p95: 1024
+  p99: 2048
+  max: 4096
+burst_multiplier: 3.0
+peak_hours_per_day: 12
+idle_hours_per_day: 6
+warm_latency_target_ms: 2000
+reliability_objective: 0.99

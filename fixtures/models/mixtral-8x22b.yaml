@@ -1,0 +1,10 @@
+model_id: mistralai/Mixtral-8x22B
+model_revision: main
+source: huggingface
+architecture: mixture_of_experts
+parameter_count: 141000000000
+context_length: 65536
+weight_dtype: bf16
+supported_backends:
+  - vllm
+  - sglang

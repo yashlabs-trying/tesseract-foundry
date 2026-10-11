@@ -1,0 +1,20 @@
+workload_id: steady-batch
+request_rate_rps: 1.0
+concurrency: 4
+input_tokens:
+  mean: 2048
+  p50: 1024
+  p95: 8192
+  p99: 16384
+  max: 32768
+output_tokens:
+  mean: 1024
+  p50: 512
+  p95: 4096
+  p99: 8192
+  max: 16384
+burst_multiplier: 1.5
+peak_hours_per_day: 24
+idle_hours_per_day: 0
+warm_latency_target_ms: 5000
+reliability_objective: 0.99

@@ -1,0 +1,10 @@
+model_id: Qwen/Qwen3-0.6B
+model_revision: main
+source: huggingface
+architecture: transformer
+parameter_count: 600000000
+context_length: 32768
+weight_dtype: bf16
+supported_backends:
+  - vllm
+  - sglang

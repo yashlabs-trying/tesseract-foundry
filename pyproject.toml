@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tesseract-foundry"
+version = "1.0.0"
+description = "AI deployment intelligence for GPU infrastructure providers"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "typer>=0.12",
+    "pyyaml>=6.0",
+    "httpx>=0.27",
+    "python-json-logger>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "ruff>=0.6", "mypy>=1.11", "coverage>=7.0"]
+kubernetes = ["kubernetes>=30.0"]
+postgres = ["psycopg2-binary>=2.9"]
+profiling = ["aiohttp>=3.9"]
+all = ["tesseract-foundry[dev,kubernetes,postgres,profiling]"]
+
+[project.scripts]
+foundry = "foundry.cli.main:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["foundry*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true

@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  tesseract-foundry:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./fixtures:/app/fixtures
+      - ./foundry.db:/app/foundry.db
+    environment:
+      - FOUNDRY_LOG_LEVEL=INFO
+      - FOUNDRY_DATABASE_URL=sqlite:///./foundry.db
+    restart: unless-stopped

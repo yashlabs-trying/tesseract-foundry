@@ -1,0 +1,16 @@
+hardware_id: h100-1
+vendor: nvidia
+gpu_model: H100
+gpu_sku: H100-SXM-80GB
+device_count: 1
+vram_per_gpu_gb: 80.0
+memory_bandwidth_gbps: 3350.0
+interconnect: NVLink
+supported_precision:
+  - fp16
+  - bf16
+  - fp8
+  - int8
+cost_per_gpu_hour_usd: 3.50
+price_provenance: list_price
+capacity_type: on_demand

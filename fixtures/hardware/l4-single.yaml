@@ -1,0 +1,12 @@
+hardware_id: l4-1
+vendor: nvidia
+gpu_model: L4
+device_count: 1
+vram_per_gpu_gb: 24.0
+memory_bandwidth_gbps: 300.0
+supported_precision:
+  - fp16
+  - int8
+cost_per_gpu_hour_usd: 0.80
+price_provenance: published
+capacity_type: on_demand

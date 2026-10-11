@@ -1,0 +1,15 @@
+hardware_id: a100-4x
+vendor: nvidia
+gpu_model: A100
+gpu_sku: A100-SXM-80GB
+device_count: 4
+vram_per_gpu_gb: 80.0
+memory_bandwidth_gbps: 2039.0
+interconnect: NVLink
+supported_precision:
+  - fp16
+  - bf16
+  - int8
+cost_per_gpu_hour_usd: 2.50
+price_provenance: list_price
+capacity_type: reserved

@@ -1,0 +1,68 @@
+# Scenario 2: One model across two different GPU types
+model:
+  model_id: meta-llama/Llama-3.1-8B
+  model_revision: main
+  source: huggingface
+  architecture: transformer
+  parameter_count: 8000000000
+  context_length: 131072
+  weight_dtype: bf16
+  supported_backends:
+    - vllm
+    - sglang
+
+hardware:
+  - hardware_id: l4-1
+    vendor: nvidia
+    gpu_model: L4
+    device_count: 1
+    vram_per_gpu_gb: 24.0
+    memory_bandwidth_gbps: 300.0
+    supported_precision:
+      - fp16
+      - int8
+    cost_per_gpu_hour_usd: 0.80
+    price_provenance: published
+    capacity_type: on_demand
+  - hardware_id: h100-1
+    vendor: nvidia
+    gpu_model: H100
+    gpu_sku: H100-SXM-80GB
+    device_count: 1
+    vram_per_gpu_gb: 80.0
+    memory_bandwidth_gbps: 3350.0
+    interconnect: NVLink
+    supported_precision:
+      - fp16
+      - bf16
+      - fp8
+      - int8
+    cost_per_gpu_hour_usd: 3.50
+    price_provenance: list_price
+    capacity_type: on_demand
+
+workload:
+  workload_id: demo-chat
+  request_rate_rps: 5.0
+  concurrency: 8
+  input_tokens:
+    mean: 512
+    p50: 384
+    p95: 2048
+    p99: 4096
+    max: 8192
+  output_tokens:
+    mean: 256
+    p50: 128
+    p95: 1024
+    p99: 2048
+    max: 4096
+  burst_multiplier: 3.0
+  peak_hours_per_day: 12
+  idle_hours_per_day: 6
+  warm_latency_target_ms: 2000
+  reliability_objective: 0.99
+
+min_contribution_margin_pct: 20.0
+input_price_per_million: 0.15
+output_price_per_million: 0.60

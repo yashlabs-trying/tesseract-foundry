@@ -1,0 +1,11 @@
+model_id: meta-llama/Llama-3.1-8B
+model_revision: main
+source: huggingface
+architecture: transformer
+parameter_count: 8000000000
+context_length: 131072
+weight_dtype: bf16
+supported_backends:
+  - vllm
+  - sglang
+  - tensorrt_llm
