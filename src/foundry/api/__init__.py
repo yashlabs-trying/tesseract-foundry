@@ -191,7 +191,8 @@ def recommend(scenario: Scenario, evidence: Optional[list[PerformanceEvidence]] 
         econ = evaluate(c, workload, inp, outp)
         economics_map[c.candidate_id] = econ
 
-    rec = qualification.recommend(candidates, economics_map, workload, evidence_map, scenario.rank_by, scenario.min_contribution_margin_pct)
+    hardware_map = {h.hardware_id: h for h in scenario.hardware}
+    rec = qualification.recommend(candidates, hardware_map, economics_map, workload, evidence_map, scenario.rank_by, scenario.min_contribution_margin_pct)
     _recommendation_store[rec.recommendation_id] = rec
     for c in candidates:
         _candidate_store[c.candidate_id] = c

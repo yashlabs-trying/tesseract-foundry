@@ -142,6 +142,8 @@ class DeploymentCandidate(BaseModel):
     replica_count: int = Field(default=1, ge=1)
     max_batch_size: int = Field(default=32, ge=1)
     max_context_length: int = Field(default=4096, ge=1)
+    model_revision: str = ""
+    model_source: str = "huggingface"
     expected_vram_gb: float = Field(default=0, ge=0)
     deployment_manifest_ref: Optional[str] = None
     estimated: bool = True
@@ -222,6 +224,7 @@ class EconomicEvaluation(BaseModel):
     sensitivity_results: dict[str, list[Decimal]] = Field(default_factory=dict)
     uncertainty_notes: Optional[str] = None
     status: str = "estimated"
+    config_version: str = "2.0"
 
 # --- ServiceRecommendation ---
 class RejectedReason(BaseModel):

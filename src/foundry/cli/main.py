@@ -110,9 +110,14 @@ def recommend(
         evidence_map[c.candidate_id] = runner.run(c, workload)
         inp = Decimal(str(data.get("input_price_per_million"))) if data.get("input_price_per_million") else None
         outp = Decimal(str(data.get("output_price_per_million"))) if data.get("output_price_per_million") else None
-        economics_map[c.candidate_id] = evaluate(c, workload, inp, outp, min_margin)
+        hw = next((h for h in hardware if h.hardware_id == c.hardware_id), None)
+        if hw:
+            economics_map[c.candidate_id] = evaluate(c, workload, hw, inp, outp)
+            economics_map[c.candidate_id] = evaluate(c, workload, hw, inp, outp)
+            economics_map[c.candidate_id] = evaluate(c, workload, hw, inp, outp)
 
-    rec = qualification.recommend(candidates, economics_map, workload, evidence_map, rank, min_margin)
+    hardware_map = {h.hardware_id: h for h in hardware}
+    rec = qualification.recommend(candidates, hardware_map, economics_map, workload, evidence_map, rank, min_margin)
     candidates_by_id = {c.candidate_id: c for c in candidates}
 
     report = generate_markdown_report(rec, candidates_by_id)
@@ -136,9 +141,11 @@ def economics(
     candidates = provider.generate_candidates(model, hardware, workload)
 
     for c in candidates:
+        hw = next((h for h in hardware if h.hardware_id == c.hardware_id), None)
         inp = Decimal(str(data.get("input_price_per_million", 0.15)))
         outp = Decimal(str(data.get("output_price_per_million", 0.60)))
-        econ = evaluate(c, workload, inp, outp)
+        if hw:
+            econ = evaluate(c, workload, hw, inp, outp)
         typer.echo(f"\n--- {c.candidate_id} ---")
         typer.echo(f"  GPU Cost/Month:  ")
         typer.echo(f"  Total Cost/Month: ")

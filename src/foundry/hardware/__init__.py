@@ -19,13 +19,14 @@ def lookup_gpu(gpu_model: str) -> Optional[dict]:
             return spec
     return None
 
-def check_vram_fit(model_params_millions: Optional[int], precision_bits: int, context_length: int, vram_gb: float, overhead_pct: float = 0.15) -> tuple[bool, float]:
-    if not model_params_millions:
+def check_vram_fit(param_count: Optional[int], precision_bits: int, context_length: int, vram_gb: float, overhead_pct: float = 0.15) -> tuple[bool, float]:
+    if not param_count:
         return True, 0
-    params = model_params_millions * 1e6
-    weight_bytes = params * (precision_bits / 8)
-    kv_cache_per_token_bytes = 2 * 2 * (model_params_millions / 1e6) * context_length * 2  # ~2 key/value heads * 2 bytes * hidden_dim ~ 2 * params_per_layer
-    kv_cache_bytes = min(kv_cache_per_token_bytes, params * 0.5)  # cap at 50% of weights
+    weight_bytes = param_count * (precision_bits / 8)
+    hidden_dim = int((param_count * 12) ** 0.5)  # rough estimate for transformer
+    num_layers = max(1, int(param_count / (hidden_dim * hidden_dim * 4)))
+    kv_cache_per_token_bytes = 2 * 2 * hidden_dim * num_layers
+    kv_cache_bytes = kv_cache_per_token_bytes * context_length
     total_bytes = weight_bytes + kv_cache_bytes
     total_gb = total_bytes / (1024**3) * (1 + overhead_pct)
     available_gb = vram_gb * 0.9

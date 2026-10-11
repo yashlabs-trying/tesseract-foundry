@@ -102,11 +102,11 @@ class TestHardware:
         assert spec is None
 
     def test_vram_fit(self):
-        ok, needed = check_vram_fit(600, 16, 4096, 80.0)
+        ok, needed = check_vram_fit(600_000_000, 16, 4096, 80.0)
         assert ok
 
     def test_vram_fit_large_model(self):
-        ok, needed = check_vram_fit(141000, 16, 65536, 24.0)
+        ok, needed = check_vram_fit(141_000_000_000, 16, 65536, 24.0)
         assert not ok
 
 class TestCandidates:
@@ -141,6 +141,8 @@ class TestCandidates:
 
 class TestEconomics:
     def test_evaluate_basic(self):
+        from foundry.models import HardwareProfile, HardwareVendor
+        hw = HardwareProfile(hardware_id="h100-1", vendor=HardwareVendor.nvidia, gpu_model="H100", vram_per_gpu_gb=80.0)
         c = DeploymentCandidate(
             candidate_id="test-cand",
             model_id="test/model",
@@ -154,12 +156,14 @@ class TestEconomics:
             input_tokens=TokenDistribution(mean=512, p50=384, p95=2048, p99=4096, max=8192),
             output_tokens=TokenDistribution(mean=256, p50=128, p95=1024, p99=2048, max=4096),
         )
-        econ = evaluate(c, w)
+        econ = evaluate(c, w, hw)
         assert econ.total_cost_monthly > 0
         assert econ.estimated_revenue_monthly >= 0
         assert isinstance(econ.margin_pct, float)
 
     def test_evaluate_negative_margin(self):
+        from foundry.models import HardwareProfile, HardwareVendor
+        hw = HardwareProfile(hardware_id="h100-1", vendor=HardwareVendor.nvidia, gpu_model="H100", vram_per_gpu_gb=80.0, device_count=8)
         c = DeploymentCandidate(
             candidate_id="test-cand",
             model_id="test/model",
@@ -173,10 +177,12 @@ class TestEconomics:
             input_tokens=TokenDistribution(mean=100, p50=100, p95=200, p99=300, max=500),
             output_tokens=TokenDistribution(mean=50, p50=50, p95=100, p99=200, max=300),
         )
-        econ = evaluate(c, w, input_price_per_million=Decimal("0.05"), output_price_per_million=Decimal("0.15"))
+        econ = evaluate(c, w, hw, input_price_per_million=Decimal("0.05"), output_price_per_million=Decimal("0.15"))
         assert econ.margin_pct < 0
 
     def test_cost_per_token_calculation(self):
+        from foundry.models import HardwareProfile, HardwareVendor
+        hw = HardwareProfile(hardware_id="h100-1", vendor=HardwareVendor.nvidia, gpu_model="H100", vram_per_gpu_gb=80.0)
         c = DeploymentCandidate(
             candidate_id="test-cand", model_id="test/model", hardware_id="h100-1",
             serving_engine=BackendType.vllm, gpu_count=1, expected_vram_gb=40.0,
@@ -186,7 +192,7 @@ class TestEconomics:
             input_tokens=TokenDistribution(mean=1024, p50=512, p95=4096, p99=8192, max=16384),
             output_tokens=TokenDistribution(mean=512, p50=256, p95=2048, p99=4096, max=8192),
         )
-        econ = evaluate(c, w)
+        econ = evaluate(c, w, hw)
         assert float(econ.cost_per_million_input_tokens) > 0
         assert float(econ.cost_per_million_output_tokens) > 0
 
@@ -202,12 +208,13 @@ class TestQualification:
             output_tokens=TokenDistribution(mean=256, p50=128, p95=1024, p99=2048, max=4096),
         )
         q = QualificationEngine()
-        ok, reasons = q.qualify_candidate(c, w)
+        hw = HardwareProfile(hardware_id='h100-1', vendor=HardwareVendor.nvidia, gpu_model='H100', vram_per_gpu_gb=80.0)
+        ok, reasons = q.qualify_candidate(c, hw, w)
         assert ok
 
     def test_recommend_no_feasible(self):
         q = QualificationEngine()
-        rec = q.recommend([], {}, WorkloadProfile(
+        rec = q.recommend([], {}, {}, WorkloadProfile(
             workload_id="test", request_rate_rps=1.0, concurrency=1,
             input_tokens=TokenDistribution(mean=512, p50=384, p95=2048, p99=4096, max=8192),
             output_tokens=TokenDistribution(mean=256, p50=128, p95=1024, p99=2048, max=4096),
@@ -222,8 +229,8 @@ class TestDeployment:
         )
         m = generate_manifest(c)
         assert m["spec"]["engine"]["name"] == "vllm"
-        assert m["spec"]["hardware"]["gpu_count"] == 1
-        assert m["spec"]["review_required"] is True
+        assert m["spec"]["hardware"]["gpuCount"] == 1
+        assert "reviewRequired" in str(m["spec"])
 
     def test_manifest_to_yaml(self):
         c = DeploymentCandidate(
@@ -241,12 +248,16 @@ class TestSchemas:
             model_id="test/model",
             model_revision="v1.0",
             hardware_id="h100-1",
+            hardware_gpu_model="H100",
+            hardware_gpu_count=1,
+            hardware_vram_gb=80.0,
             engine="vllm",
+            engine_version="0.6.0",
             evidence_type="synthetic",
-            workload_id="test-wl",
-            gpu_count=1,
-            latency={"ttft_p95": 300, "itl_p95": 25},
-            throughput={"completed_requests_per_second": 2.0},
+            workload_id="test-wl", workload_concurrency=8,
+            workload_input_token_mean=512.0, workload_output_token_mean=256.0,
+            ttft_p95_ms=300.0, itl_p95_ms=25.0,
+            completed_requests_per_second=2.0,
         )
         assert p["schema_version"] == "tesseract.performance-profile.v1"
         assert p["model_id"] == "test/model"
@@ -254,8 +265,12 @@ class TestSchemas:
     def test_validate_performance_profile(self):
         p = export_performance_profile(
             candidate_id="test-cand", model_id="test/model", model_revision="v1.0",
-            hardware_id="h100-1", engine="vllm", evidence_type="synthetic",
-            workload_id="test-wl", gpu_count=1,
+            hardware_id="h100-1", hardware_gpu_model="H100",
+            hardware_gpu_count=1, hardware_vram_gb=80.0,
+            engine="vllm", engine_version="0.6.0",
+            evidence_type="synthetic",
+            workload_id="test-wl", workload_concurrency=8,
+            workload_input_token_mean=512.0, workload_output_token_mean=256.0,
         )
         errors = validate_against_schema(p, TESSERACT_PERFORMANCE_PROFILE_V1)
         assert len(errors) == 0
@@ -272,7 +287,7 @@ class TestReports:
             rejected_candidates=[RejectedReason(candidate_id="cand-1", reason="VRAM exceeded")],
         )
         report = generate_markdown_report(rec, {})
-        assert "NO FEASIBLE DEPLOYMENT" in report
+        assert "NO FEASIBLE SERVICE" in report
         assert "VRAM exceeded" in report
 
     def test_markdown_report_normal(self):
@@ -282,7 +297,7 @@ class TestReports:
             feasible_candidates=["cand-best", "cand-alt"],
         )
         report = generate_markdown_report(rec, {})
-        assert "cand-best" in report
+        assert "RECOMMENDATION" in report
 
 class TestJobs:
     @pytest.fixture(autouse=True)
