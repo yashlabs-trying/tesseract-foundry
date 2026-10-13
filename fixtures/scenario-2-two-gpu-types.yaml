@@ -64,5 +64,5 @@ workload:
   reliability_objective: 0.99
 
 min_contribution_margin_pct: 20.0
-input_price_per_million: 0.15
-output_price_per_million: 0.60
+output_price_per_million_input_tokens: 0.15
+output_price_per_million_output_tokens: 0.60
