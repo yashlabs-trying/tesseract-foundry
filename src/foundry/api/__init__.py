@@ -150,9 +150,15 @@ def get_benchmark_job(job_id: str):
 @app.post("/v1/economics/evaluate")
 def evaluate_economics(candidate: DeploymentCandidate, workload: WorkloadProfile, input_price: Optional[float] = Query(None), output_price: Optional[float] = Query(None), api_key: str = Depends(get_api_key)):
     from decimal import Decimal
-    inp = Decimal(str(input_price)) if input_price else None
-    outp = Decimal(str(output_price)) if output_price else None
-    econ = evaluate(candidate, workload, inp, outp)
+    hardware = _hardware_store.get(candidate.hardware_id)
+    if hardware is None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"unknown hardware_id {candidate.hardware_id!r}; register it via POST /v1/hardware/profiles",
+        )
+    inp = Decimal(str(input_price)) if input_price is not None else None
+    outp = Decimal(str(output_price)) if output_price is not None else None
+    econ = evaluate(candidate, workload, hardware, inp, outp)
     return econ.model_dump()
 
 # Service recommendations
@@ -185,13 +191,19 @@ def recommend(scenario: Scenario, evidence: Optional[list[PerformanceEvidence]] 
             evidence_map[c.candidate_id] = runner.run(c, workload)
 
     economics_map: dict[str, EconomicEvaluation] = {}
+    hardware_map = {h.hardware_id: h for h in scenario.hardware}
     for c in candidates:
+        hw = hardware_map.get(c.hardware_id)
+        if hw is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"no hardware profile for candidate hardware_id={c.hardware_id!r}",
+            )
         inp = scenario.output_price_per_million_input_tokens
         outp = scenario.output_price_per_million_output_tokens
-        econ = evaluate(c, workload, inp, outp)
+        econ = evaluate(c, workload, hw, inp, outp)
         economics_map[c.candidate_id] = econ
 
-    hardware_map = {h.hardware_id: h for h in scenario.hardware}
     rec = qualification.recommend(candidates, hardware_map, economics_map, workload, evidence_map, scenario.rank_by, scenario.min_contribution_margin_pct)
     _recommendation_store[rec.recommendation_id] = rec
     for c in candidates:

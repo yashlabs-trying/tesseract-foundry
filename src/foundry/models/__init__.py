@@ -266,3 +266,23 @@ class Scenario(BaseModel):
     max_gpu_budget: Optional[int] = None
     output_price_per_million_input_tokens: Optional[Decimal] = None
     output_price_per_million_output_tokens: Optional[Decimal] = None
+
+    @model_validator(mode="after")
+    def _validate_pricing(self) -> "Scenario":
+        """Reject malformed/incomplete financial data instead of silently defaulting.
+
+        Canonical price fields are ``output_price_per_million_input_tokens`` and
+        ``output_price_per_million_output_tokens``. If one is supplied the other
+        must be too; both must be non-negative.
+        """
+        inp = self.output_price_per_million_input_tokens
+        outp = self.output_price_per_million_output_tokens
+        if inp is not None and inp < 0:
+            raise ValueError("output_price_per_million_input_tokens must be >= 0")
+        if outp is not None and outp < 0:
+            raise ValueError("output_price_per_million_output_tokens must be >= 0")
+        if (inp is None) != (outp is None):
+            raise ValueError(
+                "incomplete pricing: provide both input and output prices, or neither"
+            )
+        return self
